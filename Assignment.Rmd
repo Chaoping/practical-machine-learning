@@ -1,0 +1,73 @@
+---
+title: "Exercise Classification using Wearable Device"
+author: "Chaoping Guo"
+date: "February 20, 2016"
+output:
+  html_document:
+    fig_height: 8
+    fig_width: 9
+---
+
+## Overview
+This project uses data collected from accelerometers on the belt, forearm, arm, and dumbell of 6 participants and tries to fit a model to determine how a barbell lift is performed.
+
+## Data Source and Preprocessing
+Training data set [pml-training.csv](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv) and test data set [pml-testing.csv](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv) are downloaded to R working directory. 
+```{r cache = T}
+training = read.csv('pml-training.csv')
+test = read.csv('pml-testing.csv')
+```
+We will only use the variables that are complete:
+```{r}
+completeCheck = function(x){
+  if(sum(is.na(x) | x == "")) return(F) else return(T) 
+}
+complete.variables = apply(test, 2, completeCheck)
+test = test[,complete.variables]
+training = training[,complete.variables]
+test$X = test$cvtd_timestamp = test$new_window = NULL
+training$X = training$cvtd_timestamp = training$new_window = NULL
+```
+
+## Exploratory Data Analysis
+```{r}
+library(scatterplot3d)
+par(mfrow = c(2,2))
+with(training, scatterplot3d(accel_belt_x,accel_belt_y,accel_belt_z, color = as.numeric(classe), pch = 16, cex.symbols = 0.2))
+with(training, scatterplot3d(accel_arm_x,accel_arm_y,accel_arm_z, color = as.numeric(classe), pch = 16, cex.symbols = 0.2))
+with(training, scatterplot3d(accel_dumbbell_x,accel_dumbbell_y,accel_dumbbell_z, color = as.numeric(classe), pch = 16, cex.symbols = 0.2))
+with(training, scatterplot3d(accel_forearm_x,accel_forearm_y,accel_forearm_z, color = as.numeric(classe), pch = 16, cex.symbols = 0.2))
+```
+The sensor data indicate that the pattern is different from person to person and varies along with each lift. Therefore we will try to fit a model with these variables. Also, it seems that many variables are linear inseparable in their own dimensions, so we will use a Support Vector Machine with kernel methods for this problem.
+
+## Model Fitting and Cross Validation
+First we use the data to train an SVM, and check it's in-sample error rate:
+```{r}
+library(e1071)
+model = svm(classe~., data = training)
+error.in = mean(predict(model)!=training$classe)
+```
+The in-sample error rate is `r round(error.in * 100,2)`%, and we expect the out-of-sample error rate to be lower than this.
+
+We can do a 10-fold cross validation to check that:
+```{r}
+set.seed(123)
+n.obs = nrow(training) ## Number of observations
+shuffle = sample(n.obs) ## Reorder the training set
+cv.error.rate = vector(mode = "numeric", length = 10)
+for(i in 1:10){
+  fold.train.index = shuffle[round(((n.obs/10)*(i-1))):round(((n.obs/10)*i))]
+  cv.model = svm(classe~., data = training[fold.train.index,])
+  cv.error.rate[i] = mean(predict(cv.model, newdata = training[-fold.train.index,])!=training[-fold.train.index,]$classe)
+}
+```
+This gives an average cross-validate error rate of `r round(mean(cv.error.rate)*100,2)`%, the test set error rate should also be close to this.
+
+## Predict on the test set:
+```{r}
+result = predict(model, newdata = test)
+write.table(result, 'Result.txt', sep = ",")
+```
+
+
+
