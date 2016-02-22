@@ -47,7 +47,7 @@ library(e1071)
 model = svm(classe~., data = training)
 error.in = mean(predict(model)!=training$classe)
 ```
-The in-sample error rate is `r round(error.in * 100,2)`%, and we expect the out-of-sample error rate to be lower than this.
+The in-sample error rate is `r round(error.in * 100,2)`%, and we expect the out-of-sample error rate to be with lower accuracy than this.
 
 We can do a 10-fold cross validation to check that:
 ```{r}

@@ -103,7 +103,7 @@ with(training, scatterplot3d(accel_forearm_x,accel_forearm_y,accel_forearm_z, co
 <pre class="r"><code>library(e1071)
 model = svm(classe~., data = training)
 error.in = mean(predict(model)!=training$classe)</code></pre>
-<p>The in-sample error rate is 4.12%, and we expect the out-of-sample error rate to be lower than this.</p>
+<p>The in-sample error rate is 4.12%, and we expect the out-of-sample error rate to be with lower accuracy than this.</p>
 <p>We can do a 10-fold cross validation to check that:</p>
 <pre class="r"><code>set.seed(123)
 n.obs = nrow(training) ## Number of observations
